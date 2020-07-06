@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"../network"
 )
 
 type Block struct {
@@ -13,7 +15,13 @@ type Block struct {
 	BlockType       int
 }
 
+var nodes []*network.Node
+
 func main() {
+	//need to set up Nodes here
+	//maybe take in number of nodes from command line arg
+	//numNodes := 5
+
 	http.HandleFunc("/", HelloServer)
 	http.HandleFunc("/list", ListingPage)
 	http.HandleFunc("/add-listing", AddListing)
@@ -32,20 +40,6 @@ func HelloServer(w http.ResponseWriter, r *http.Request) {
 
 	t, _ := template.ParseFiles("testPage.html")
 	t.Execute(w, testBlock)
-}
-
-//transaction block verification functions
-//one of these should be called after basic block verification based on what type the block was
-func VerifyNewUser() { //should take block as input
-
-}
-
-func VerifyListing() {
-
-}
-
-func VerifyPurchase() {
-
 }
 
 //These functions put data into the blockchain in response to actions in the web app
