@@ -1,21 +1,22 @@
 package Blockchain
 
 import (
-	"../github.com/dgraph-io/badger"
 	"fmt"
+
+	"../github.com/dgraph-io/badger"
 )
 
 const dbpath = "./tmp/blocks"
 
-type BlockChain struct{
+type BlockChain struct {
 	LastHash []byte
-	Database  *badger.DB
+	Database *badger.DB
 }
 
 //structure to iterate through the blockchain
-type Iterator struct{
+type Iterator struct {
 	currenth []byte
-	DB *badger.DB
+	DB       *badger.DB
 }
 
 func (chain *BlockChain) AddBlock(data string) {
@@ -33,12 +34,12 @@ func (chain *BlockChain) AddBlock(data string) {
 	})
 	Handle(err)
 
-	newblock := CreateBlock(data,lasthash)
+	newblock := CreateBlock(data, lasthash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
-		err := txn.Set(newblock.Hash,newblock.serial())
+		err := txn.Set(newblock.Hash, newblock.serial())
 		Handle(err)
-		err = txn.Set([]byte("lh"),newblock.Hash)
+		err = txn.Set([]byte("lh"), newblock.Hash)
 
 		chain.LastHash = newblock.Hash
 		return err
@@ -50,7 +51,7 @@ func (chain *BlockChain) AddBlock(data string) {
 
  */
 
-func InitBlockchain() *BlockChain{
+func InitBlockchain() *BlockChain {
 	var lastHash []byte
 
 	opts := badger.DefaultOptions(dbpath)
@@ -59,7 +60,6 @@ func InitBlockchain() *BlockChain{
 
 	db, err := badger.Open(opts)
 	Handle(err)
-
 
 	//two ways to access the database, view or update, update allows for writes
 	err = db.Update(func(txn *badger.Txn) error {
@@ -72,17 +72,17 @@ func InitBlockchain() *BlockChain{
 			fmt.Println("Genesis Block proved")
 			err = txn.Set(genesis.Hash, genesis.serial())
 			Handle(err)
-			err = txn.Set([]byte("lh"),genesis.Hash)
+			err = txn.Set([]byte("lh"), genesis.Hash)
 
 			lastHash = genesis.Hash
 
 			return err
-		}else{
-			item,err := txn.Get([]byte("lh"))
+		} else {
+			item, err := txn.Get([]byte("lh"))
 			Handle(err)
 			var Hash []byte
 			err = item.Value(func(val []byte) error {
-				Hash = append([]byte{},val...)
+				Hash = append([]byte{}, val...)
 				return nil
 			})
 			return err
@@ -90,28 +90,28 @@ func InitBlockchain() *BlockChain{
 
 	})
 	Handle(err)
-	chain := BlockChain{lastHash,db}
+	chain := BlockChain{lastHash, db}
 	return &chain
 }
 
 //Manually implementing an iterator instead of pre-built functions, iterating backwards as we start from the last hash
-func (chain *BlockChain) ChainIter() *Iterator{
-	iter := &Iterator{chain.LastHash,chain.Database}
+func (chain *BlockChain) ChainIter() *Iterator {
+	iter := &Iterator{chain.LastHash, chain.Database}
 	return iter
 }
 
 //Function that returns a pointer to the next block
-func (iter *Iterator) Next() *Block{
+func (iter *Iterator) Next() *Block {
 	var block *Block
 
 	//in order to find the next block, we read through the chain and hence use the view function instead of update
 	err := iter.DB.View(func(txn *badger.Txn) error {
-		item,err := txn.Get(iter.currenth)
+		item, err := txn.Get(iter.currenth)
 		Handle(err)
 
 		var encblock []byte
 		err = item.Value(func(val []byte) error {
-			encblock = append([]byte{},val...)
+			encblock = append([]byte{}, val...)
 			return nil
 		})
 		block = deserial(encblock)
