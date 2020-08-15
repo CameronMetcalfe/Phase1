@@ -17,6 +17,8 @@ type BlockData struct { //will be converted to byte[] when added to actual block
 	ItemPrice       int
 	Username        string
 	BlockType       int //0: user, 1: listing, 2: purchase
+	PurchasedHash   []byte
+	PurchasedIndex  int //used for test network, not actually used in the blockchain
 }
 
 //var nodes []*network.Node

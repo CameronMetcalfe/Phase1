@@ -40,8 +40,13 @@ func (net *Network) CheckChains() {
 
 }
 
-func (n *Node) SendMessage(to int, args *MessageArgs, reply *MessageReply) {
+func (n *Node) SendMessage(to int, args *MessageArgs, reply *MessageReply) bool {
+	if !n.network.connected[to] {
+		return false
+	}
 
+	n.network.nodes[to].VerifyMessage(args, reply)
+	return true
 }
 
 func (n *Node) VerifyMessage(args *MessageArgs, reply *MessageReply) {
@@ -53,39 +58,105 @@ func (n *Node) VerifyMessage(args *MessageArgs, reply *MessageReply) {
 	}
 
 	reply.Accepted = true
-	// if args.CurrentChainLength > n.chainLength {
-
-	// }
 }
 
-func (n *Node) CreateListing(itemName string, itemPrice int, itemDescription string) {
-	block := InitBlockStruct(1, itemName, itemDescription, itemPrice, n.userAddress)
+func (n *Node) SuggestNewBlock(block *BlockData) bool {
 	numVotes := 0
-	//maxReceivedChainLength := 0
+	maxReceivedChainLength := 0
+	longestChainNode := 0
+	failed := false
 	for i, _ := range n.network.nodes {
 		if i != n.me && n.network.connected[i] {
-			args := &MessageArgs{InteractionType: 1, CurrentChainLength: n.chainLength, block: block}
+			args := &MessageArgs{InteractionType: block.BlockType, CurrentChainLength: n.chainLength, block: block}
 			reply := &MessageReply{}
 			n.SendMessage(i, args, reply)
 
 			if reply.Accepted {
 				numVotes++
 			} else {
-				//maxReceivedChainLength
+				failed = true
+				if reply.PeerChainLength > maxReceivedChainLength {
+					maxReceivedChainLength = reply.PeerChainLength
+					longestChainNode = 1
+				}
 			}
+
+			if reply.PeerChainLength < n.chainLength {
+				n.SendMissingBlocks(reply.PeerChainLength, i)
+			}
+		}
+	}
+
+	if failed { //failed because chain is out of date, update it and try again
+		n.network.nodes[longestChainNode].SendMissingBlocks(n.chainLength, n.me)
+		return n.SuggestNewBlock(block)
+	} else if numVotes < (len(n.network.nodes)) { //failed because of a network partition, return false. User should be alerted to try again later
+		return false
+	} else {
+		return true
+	}
+}
+
+func (n *Node) ConfirmBlock(block *BlockData) {
+	for i, _ := range n.network.nodes {
+		if i != n.me {
+			n.SendMissingBlocks(n.chainLength-1, i)
 		}
 	}
 }
 
-func (n *Node) VerifyNewUser(username string) bool { //should take in
-	//should check the blockchain for a user with the same username, if none is found return true
+func (n *Node) CreateListing(itemName string, itemPrice int, itemDescription string) bool {
+	block := InitBlockStruct(1, itemName, itemDescription, itemPrice, n.userAddress)
+	passed := n.SuggestNewBlock(block)
+
+	if passed {
+		//send out update messages to all the nodes
+		n.chainLength++
+		n.chainSeen = append(n.chainSeen, block)
+		n.ConfirmBlock(block)
+		return true
+	}
+	return false
+}
+
+func (n *Node) PurchaseListing(itemNum int) bool {
+	block := &BlockData{BlockType: 2, PurchasedIndex: itemNum}
+	passed := n.SuggestNewBlock(block)
+
+	if passed {
+		//handle stuff
+		n.chainLength++
+		n.chainSeen = append(n.chainSeen, block)
+		n.ConfirmBlock(block)
+		return true
+	}
+	return false
+}
+
+func (n *Node) SendMissingBlocks(start int, to int) bool {
+	if !n.network.connected[to] {
+		return false
+	}
+
+	blocksToSend := make([]*BlockData, n.chainLength-start+1)
+	for i := start; i < n.chainLength; i++ {
+		blocksToSend[i-start] = n.chainSeen[i]
+	}
+	if n.network.connected[to] {
+		//call method for handling adding existing blocks
+		n.network.nodes[to].AddSentBlocks(blocksToSend)
+	}
 	return true
 }
 
-func (n *Node) VerifyNewListing() bool { //not sure if this is necessary
-	return true
+func (n *Node) AddSentBlocks(sentBlocks []*BlockData) {
+	n.chainSeen = append(n.chainSeen, sentBlocks...)
+	n.chainLength += len(sentBlocks)
 }
 
-func (n *Node) VerifyNewPurchase() bool { //definitely necessary, must ensure product is still available and buyer is paying the same price as listed by the seller
-	return true
+func (n *Node) InitNode(me int, username string, net *Network) {
+	n.me = me
+	n.chainSeen = make([]*BlockData, 0)
+	n.userAddress = username
+	n.network = net
 }
