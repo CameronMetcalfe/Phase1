@@ -2,12 +2,17 @@ package network
 
 //for RPC and network stuff
 //currently no simulation of network lag/loss
+import (
+	Bchain "../go_blockchain/blockchain"
+)
 
 type Node struct {
 	//need array of blocks for the blockchain
 	//need similar stuff to raft nodes (peers, etc)
-	me    int
-	peers []*Node
+	me          int
+	peers       []*Node //should this be a map and use useraddress?
+	chain       *Bchain.BlockChain
+	userAddress string
 }
 
 func (n *Node) VerifyNewUser(username string) bool { //should take in

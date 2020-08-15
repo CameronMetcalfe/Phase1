@@ -34,6 +34,8 @@ func (chain *BlockChain) AddBlock(data string) {
 	})
 	Handle(err)
 
+	fmt.Println("Printing block lasthash")
+	fmt.Print(lasthash)
 	newblock := CreateBlock(data, lasthash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
