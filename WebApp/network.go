@@ -35,11 +35,6 @@ type MessageReply struct {
 	PeerChainLength int
 }
 
-//checks that values held by nodes match up
-func (net *Network) CheckChains() {
-
-}
-
 func (n *Node) SendMessage(to int, args *MessageArgs, reply *MessageReply) bool {
 	if !n.network.connected[to] {
 		return false
@@ -154,9 +149,8 @@ func (n *Node) AddSentBlocks(sentBlocks []*BlockData) {
 	n.chainLength += len(sentBlocks)
 }
 
-func (n *Node) InitNode(me int, username string, net *Network) {
-	n.me = me
-	n.chainSeen = make([]*BlockData, 0)
-	n.userAddress = username
-	n.network = net
+func InitNode(me int, username string, net *Network) *Node {
+	createdNode := Node{me: me, userAddress: username, network: net}
+	createdNode.chainSeen = make([]*BlockData, 0)
+	return &createdNode
 }
