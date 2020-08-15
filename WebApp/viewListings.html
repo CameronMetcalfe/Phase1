@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- I know this isn't the proper way to format html, but it had to be done quickly -->
+<html>
+    <head>
+        <title>Current Listings Edited</title>
+    </head>
+    <body>
+        {{range .}}
+            <div>
+                <h3>{{.ItemName}}</h3>
+                <span>{{.ItemDescription}}</span>
+                <div>
+                    <span>Price: ${{.ItemPrice}}</span>
+                </div>
+                
+            </div>
+        {{end}}
+    </body>
+</html>

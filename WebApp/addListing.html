@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test listing page</title>
+    </head>
+    <body>
+        <div>
+            <form action="/submit-listing" method="POST">
+                <label for="item-name">Item Name</label><br>
+                <input type="text" id="item-name" name="item-name"><br>
+                <label for="item-description">Item Description</label><br>
+                <input type="text" id="item-description" name="item-description"><br>
+                <label for="price">Price</label><br>
+                <input type="number" id="price" min="0" name="price"><br>
+                <input type="submit" value="Add listing">
+            </form>
+        </div>
+        <div><a href="/view-listings">View Listings</a></div>
+    </body>
+</html>

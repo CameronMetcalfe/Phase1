@@ -16,38 +16,38 @@ type BlockData struct { //will be converted to byte[] when added to actual block
 	ItemDescription string
 	ItemPrice       int
 	Username        string
-	BlockType       int
+	BlockType       int //0: user, 1: listing, 2: purchase
 }
 
 //var nodes []*network.Node
-var chain *Bchain.BlockChain
-var UserAddress string
+// var chain *Bchain.BlockChain
+// var UserAddress string
 
 func (n *Node) Test() {
 	fmt.Printf("Node: %d is testing\n", n.me)
 }
 
-func InitWebApp(address string, port int) { //should make this a function of Node
+func (n *Node) InitWebApp(address string, port int) { //should make this a function of Node
 	//need to set up Nodes here
 	//maybe take in number of nodes from command line arg
 	//numNodes := 5
 	//var chain blockchain.Blockchain
 	fmt.Println("server is starting")
 	if Bchain.DBexists() {
-		chain = Bchain.ContinueBlockChain(address) //does continue work if it's a new address for existing DB?
+		n.chain = Bchain.ContinueBlockChain(address) //does continue work if it's a new address for existing DB?
 	} else {
-		chain = Bchain.InitBlockchain(address)
+		n.chain = Bchain.InitBlockchain(address)
 	}
-	UserAddress = address
+	n.userAddress = address
 
-	http.HandleFunc("/", HelloServer)
-	http.HandleFunc("/add-listing", ListingPage)
-	http.HandleFunc("/view-listings", CurrentListings)
-	http.HandleFunc("/submit-listing", AddListing)
-	http.HandleFunc("/purchase", PurchasePage)
-	http.HandleFunc("/bought", BuyListing)
-	http.HandleFunc("/add-user", AddUser)
-	http.HandleFunc("/users", UsersPage)
+	http.HandleFunc("/", n.HelloServer)
+	http.HandleFunc("/add-listing", n.ListingPage)
+	http.HandleFunc("/view-listings", n.CurrentListings)
+	http.HandleFunc("/submit-listing", n.AddListing)
+	http.HandleFunc("/purchase", n.PurchasePage)
+	http.HandleFunc("/bought", n.BuyListing)
+	http.HandleFunc("/add-user", n.AddUser)
+	http.HandleFunc("/users", n.UsersPage)
 
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
@@ -62,7 +62,7 @@ func InitBlockStruct(blockType int, itemName string, desc string, price int, use
 	return result
 }
 
-func HelloServer(w http.ResponseWriter, r *http.Request) {
+func (n *Node) HelloServer(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
 	//title := r.URL.Path[1:] //r.URL.Path[]
 	// testBlock := Block{}
@@ -73,7 +73,7 @@ func HelloServer(w http.ResponseWriter, r *http.Request) {
 }
 
 //These functions put data into the blockchain in response to actions in the web app
-func AddListing(w http.ResponseWriter, r *http.Request) {
+func (n *Node) AddListing(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Add listing function called")
 	var price string
 	price = r.FormValue("price")
@@ -86,25 +86,25 @@ func AddListing(w http.ResponseWriter, r *http.Request) {
 
 	encoded, _ := json.Marshal(listingBlock)
 	transactions := []*Bchain.Transaction{&Bchain.Transaction{Inputs: []Bchain.TXInput{Bchain.TXInput{Sig: string(encoded)}}}}
-	chain.AddBlock(transactions)
+	n.chain.AddBlock(transactions)
 
 	//show confirmation page
 	t, _ := template.ParseFiles("confirmation.html")
 	t.Execute(w, nil)
 }
 
-func BuyListing(w http.ResponseWriter, r *http.Request) {
+func (n *Node) BuyListing(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Buying function called")
 	//buyingBlock := InitBlockStruct()
 }
 
-func AddUser(w http.ResponseWriter, r *http.Request) {
+func (n *Node) AddUser(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("username")
 	fmt.Println(name)
 	userBlock := InitBlockStruct(0, "", "", 0, name)
 	encoded, _ := json.Marshal(userBlock)
 	transactions := []*Bchain.Transaction{&Bchain.Transaction{Inputs: []Bchain.TXInput{Bchain.TXInput{Sig: string(encoded)}}}}
-	chain.AddBlock(transactions)
+	n.chain.AddBlock(transactions)
 	fmt.Println("ended")
 
 	//show confirmation page
@@ -123,9 +123,9 @@ func ConvertBlock(block *Bchain.Block) *BlockData {
 	return data
 }
 
-func GetBlocks(blockType int) []*BlockData {
+func (n *Node) GetBlocks(blockType int) []*BlockData {
 	var results []*BlockData
-	iterator := chain.ChainIter()
+	iterator := n.chain.ChainIter()
 
 	for {
 		current := iterator.Next()
@@ -139,49 +139,42 @@ func GetBlocks(blockType int) []*BlockData {
 		}
 	}
 
-	// for current != nil { //may have to change this to break on prevHash == 0
-	// 	currentStruct := ConvertBlock(current)
-	// 	if currentStruct.BlockType == blockType {
-	// 		results = append(results, currentStruct)
-	// 	}
-	// 	current = iterator.Next()
-	// }
 	return results
 }
 
 //These functions retrieve data from the blockchain in order to display in the web app
-func ListingPage(w http.ResponseWriter, r *http.Request) {
+func (n *Node) ListingPage(w http.ResponseWriter, r *http.Request) {
 	//pass these to the testlistings page after adjusting it
 	t, _ := template.ParseFiles("addListing.html")
 	t.Execute(w, nil)
 }
 
-func CurrentListings(w http.ResponseWriter, r *http.Request) {
+func (n *Node) CurrentListings(w http.ResponseWriter, r *http.Request) {
 	//needs to be able to pull some data from the blockchain and display it here
 	//traverse blockchain, decode it, and grab an array of the listing blocks
-	listings := GetBlocks(1)
+	listings := n.GetBlocks(1)
 	fmt.Printf("Retrieved %d listings\n", len(listings))
 	t, _ := template.ParseFiles("viewListings.html")
 	t.Execute(w, listings)
 	//Printchain()
 }
 
-func PurchasePage(w http.ResponseWriter, r *http.Request) {
+func (n *Node) PurchasePage(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("testPurchase.html")
 	t.Execute(w, nil)
 }
 
-func UsersPage(w http.ResponseWriter, r *http.Request) {
-	users := GetBlocks(0)
+func (n *Node) UsersPage(w http.ResponseWriter, r *http.Request) {
+	users := n.GetBlocks(0)
 	fmt.Println(len(users))
 	t, _ := template.ParseFiles("testUsers.html")
 	t.Execute(w, nil)
 }
 
-func Printchain() {
+func (n *Node) Printchain() {
 	//chain := Blockchain.ContinueBlockChain("")
 	//defer chain.Database.Close()
-	iter := chain.ChainIter()
+	iter := n.chain.ChainIter()
 
 	for {
 		block := iter.Next()
