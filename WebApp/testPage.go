@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	Bchain "../go_blockchain/blockchain"
+	Bchain "../blockchain/blockchain"
 	// "../network"
 )
 
