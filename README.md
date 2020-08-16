@@ -27,6 +27,7 @@ All the above commands generate several statistics from the badgerDB and are onl
 performance of the implementation
 
 In order to run this on your machine, several dependencies for the BadgerDB are necessary
+	
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	
 	github.com/dgraph-io/badger v1.5.4
@@ -40,6 +41,13 @@ In order to run this on your machine, several dependencies for the BadgerDB are 
 	golang.org/x/net v0.0.0-20181023162649-9b4f9f5ad519 // indirect
   
 the code for the database will not function without these imports
+
+instead of downloading them manually, the following link contains all the files necessary
+for running the implementation and is made public
+
+https://drive.google.com/drive/folders/1dPGpY1EELrhXjr-LJ7hIgKkEM4yuyioa?usp=sharing
+
+
   
 Finally you need a file called tmp in the working directory to store the database
   
