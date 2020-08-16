@@ -51,3 +51,9 @@ https://drive.google.com/drive/folders/1dPGpY1EELrhXjr-LJ7hIgKkEM4yuyioa?usp=sha
   
 Finally you need a file called tmp in the working directory to store the database
   
+
+To run the web app, you must have a folder named "tmp" in the WebApp folder to store the blockchain.
+After that, you can type "go test -run TestStartFresh" to start the web app, then go to localhost:8080 on your browser to visit it
+Since golang tests have a 10 minute timeout, you can only test through this method for 10 minutes at a time before the test closes
+
+Other network tests found in app_test.go
